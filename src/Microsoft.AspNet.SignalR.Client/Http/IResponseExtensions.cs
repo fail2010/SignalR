@@ -9,7 +9,7 @@ namespace Microsoft.AspNet.SignalR.Client.Http
 {
     public static class IResponseExtensions
     {
-        public static Task<string> ReadAsString(this IResponse response)
+        public static Task<string> ReadAsString(this IResponse response, Func<ArraySegment<byte>, bool> onChunk)
         {
             if (response == null)
             {
@@ -23,7 +23,10 @@ namespace Microsoft.AspNet.SignalR.Client.Http
 
             reader.Data = buffer =>
             {
-                result.Append(Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count));
+                if (onChunk(buffer))
+                {
+                    result.Append(Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count));
+                }
             };
 
             reader.Closed = exception =>
@@ -35,6 +38,16 @@ namespace Microsoft.AspNet.SignalR.Client.Http
             reader.Start();
 
             return resultTcs.Task;
+        }
+
+        public static Task<string> ReadAsString(this IResponse response)
+        {
+            return response.ReadAsString(AcceptAllChunks);
+        }
+
+        private static bool AcceptAllChunks(ArraySegment<byte> chunk)
+        {
+            return true;
         }
     }
 }
