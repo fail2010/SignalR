@@ -402,6 +402,8 @@ namespace Microsoft.AspNet.SignalR.Transports
 
             public void Complete(Exception error)
             {
+                Debug.WriteLine("LongPolling RequestLifetime complete.");
+
                 _lifetime.Complete(error);
 
                 _transport.Dispose();

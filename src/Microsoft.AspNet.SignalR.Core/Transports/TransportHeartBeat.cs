@@ -103,6 +103,7 @@ namespace Microsoft.AspNet.SignalR.Transports
 
             _connections.AddOrUpdate(connection.ConnectionId, newMetadata, (key, old) =>
             {
+                Debug.WriteLine("Connection {0} exists. Closing previous connection.", old.Connection.ConnectionId);
                 Trace.TraceEvent(TraceEventType.Verbose, 0, "Connection {0} exists. Closing previous connection.", old.Connection.ConnectionId);
                 // Kick out the older connection. This should only happen when 
                 // a previous connection attempt fails on the client side (e.g. transport fallback).
@@ -122,6 +123,7 @@ namespace Microsoft.AspNet.SignalR.Transports
 
             if (isNewConnection)
             {
+                Debug.WriteLine("Connection {0} is New.", connection.ConnectionId);
                 Trace.TraceInformation("Connection {0} is New.", connection.ConnectionId);
             }
 
@@ -160,6 +162,7 @@ namespace Microsoft.AspNet.SignalR.Transports
 
                 connection.ApplyState(TransportConnectionStates.Removed);
 
+                Debug.WriteLine("Removing connection {0}", connection.ConnectionId);
                 Trace.TraceInformation("Removing connection {0}", connection.ConnectionId);
             }
         }
@@ -198,6 +201,7 @@ namespace Microsoft.AspNet.SignalR.Transports
         {
             if (Interlocked.Exchange(ref _running, 1) == 1)
             {
+                Debug.WriteLine("Timer handler took longer than current interval");
                 Trace.TraceEvent(TraceEventType.Verbose, 0, "Timer handler took longer than current interval");
                 return;
             }
@@ -219,6 +223,7 @@ namespace Microsoft.AspNet.SignalR.Transports
                     }
                     else
                     {
+                        Debug.WriteLine(metadata.Connection.ConnectionId + " is dead");
                         Trace.TraceEvent(TraceEventType.Verbose, 0, metadata.Connection.ConnectionId + " is dead");
 
                         // Check if we need to disconnect this connection
@@ -228,6 +233,7 @@ namespace Microsoft.AspNet.SignalR.Transports
             }
             catch (Exception ex)
             {
+                Debug.WriteLine("SignalR error during transport heart beat on background thread: {0}", ex);
                 Trace.TraceEvent(TraceEventType.Error, 0, "SignalR error during transport heart beat on background thread: {0}", ex);
             }
             finally
@@ -250,6 +256,7 @@ namespace Microsoft.AspNet.SignalR.Transports
                 // of us handling timeout's or disconnects gracefully
                 if (RaiseKeepAlive(metadata))
                 {
+                    Debug.WriteLine("KeepAlive(" + metadata.Connection.ConnectionId + ")");
                     Trace.TraceEvent(TraceEventType.Verbose, 0, "KeepAlive(" + metadata.Connection.ConnectionId + ")");
 
                     // Ensure delegate continues to use the C# Compiler static delegate caching optimization.
@@ -277,6 +284,7 @@ namespace Microsoft.AspNet.SignalR.Transports
             catch (Exception ex)
             {
                 // Swallow exceptions that might happen during disconnect
+                Debug.WriteLine("Raising Disconnect failed: {0}", ex);
                 Trace.TraceEvent(TraceEventType.Error, 0, "Raising Disconnect failed: {0}", ex);
             }
         }
@@ -340,6 +348,7 @@ namespace Microsoft.AspNet.SignalR.Transports
                     _timer.Dispose();
                 }
 
+                Debug.WriteLine("Dispose(). Closing all connections");
                 Trace.TraceInformation("Dispose(). Closing all connections");
 
                 // Kill all connections
@@ -361,6 +370,7 @@ namespace Microsoft.AspNet.SignalR.Transports
 
         private static void OnKeepAliveError(AggregateException ex, object state)
         {
+            Debug.WriteLine("Failed to send keep alive: " + ex.GetBaseException());
             ((TraceSource)state).TraceEvent(TraceEventType.Error, 0, "Failed to send keep alive: " + ex.GetBaseException());
         }
 
